@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gim Edukasi IPAS Kelas 5 - Petualangan Anatomi</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(135deg, #74EBD5 0%, #9FACE6 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+        }
+
+        .container {
+            background-color: white;
+            width: 90%;
+            max-width: 800px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            position: relative;
+            padding: 30px;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Start Screen */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .input-group label {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .input-group input {
+            padding: 15px;
+            border: 2px solid #9FACE6;
+            border-radius: 10px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: #74EBD5;
+        }
+
+        .btn {
+            background: #2ecc71;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, background 0.3s;
+        }
+
+        .btn:hover {
+            background: #27ae60;
+            transform: scale(1.02);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Quiz Screen */
+        .header-quiz {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-weight: 600;
+            color: #555;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .question-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .option {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+            text-align: left;
+        }
+
+        .option:hover {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+        }
+
+        .option.selected {
+            background: #dbeafe;
+            border-color: #3b82f6;
+        }
+
+        .option.correct-reveal {
+            background: #d1fae5;
+            border-color: #10b981;
+            color: #065f46;
+        }
+
+        .option.wrong-reveal {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+
+        #next-btn {
+            background: #3b82f6;
+            display: none;
+        }
+        #next-btn:hover {
+            background: #2563eb;
+        }
+
+        /* Result Screen */
+        .result-container {
+            text-align: center;
+        }
+
+        .score-display {
+            font-size: 4rem;
+            font-weight: 800;
+            color: #f39c12;
+            margin: 20px 0;
+        }
+
+        .btn-download {
+            background: #9b59b6;
+            margin-top: 20px;
+        }
+
+        .btn-download:hover {
+            background: #8e44ad;
+        }
+
+        canvas {
+            display: none; /* Hidden canvas for certificate generation */
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Start Screen -->
+    <div id="start-screen" class="screen active">
+        <h1>🌟 Petualangan Anatomi IPAS 🌟</h1>
+        <p style="text-align: center; margin-bottom: 30px; color: #666;">Jawab 50 Tantangan Analisis (HOTS) tentang Sistem Tubuh Manusia!</p>
+        <div class="input-group">
+            <label for="player-name">Masukkan Nama Kamu:</label>
+            <input type="text" id="player-name" placeholder="Contoh: Budi Santoso" autocomplete="off">
+        </div>
+        <button class="btn" onclick="startGame()">Mulai Bermain</button>
+    </div>
+
+    <!-- Quiz Screen -->
+    <div id="quiz-screen" class="screen">
+        <div class="header-quiz">
+            <span id="question-tracker">Soal 1 / 50</span>
+            <span id="player-display"></span>
+        </div>
+        <div id="question-text" class="question-text">Teks Soal</div>
+        <div id="options-container" class="options">
+            <!-- Options injected by JS -->
+        </div>
+        <button id="next-btn" class="btn" onclick="nextQuestion()">Selanjutnya</button>
+    </div>
+
+    <!-- Result Screen -->
+    <div id="result-screen" class="screen">
+        <div class="result-container">
+            <h2>Selamat, <span id="final-name"></span>! 🎉</h2>
+            <p>Kamu telah menyelesaikan misi petualangan anatomi tubuh manusia.</p>
+            <div class="score-display" id="final-score">0</div>
+            <p style="margin-bottom: 30px; color: #555;">Skor kamu dihitung dari persentase jawaban benar.</p>
+            <button class="btn btn-download" onclick="downloadCertificate()">Unduh Sertifikat 🏆</button>
+            <button class="btn" style="margin-top: 15px; background: #95a5a6;" onclick="location.reload()">Main Lagi</button>
+        </div>
+    </div>
+</div>
+
+<canvas id="cert-canvas" width="800" height="600"></canvas>
+
+<script>
+    // --- QUESTION BANK (50 HOTS C4 Questions) ---
+    const questions = [
+        // SISTEM PENCERNAAN
+        {
+            q: "Seorang pasien sering mengeluh nyeri perut sebelah kiri atas, mual, dan perih terutama jika terlambat makan. Berdasarkan analisis gejala tersebut, proses pencernaan yang terganggu terjadi di organ...",
+            options: [
+                "Lambung, akibat produksi asam lambung (HCl) yang berlebihan mengiritasi dinding lambung",
+                "Usus halus, akibat enzim pencernaan tidak mampu menyerap sari makanan",
+                "Hati, karena gagal menghasilkan empedu untuk mencerna lemak",
+                "Usus besar, akibat bakteri E.coli tidak berfungsi membusukkan sisa makanan"
+            ],
+            answer: 0
+        },
+        {
+            q: "Budi mengunyah nasi putih tanpa lauk dalam waktu yang cukup lama. Lama-kelamaan nasi tersebut terasa manis di mulutnya. Mengapa hal ini bisa terjadi?",
+            options: [
+                "Nasi memiliki gula alami yang baru keluar setelah terkena panas tubuh di mulut",
+                "Enzim ptialin (amilase) dalam air liur mengubah karbohidrat pada nasi menjadi zat gula sederhana",
+                "Gigi seri memotong nasi sehingga memunculkan rasa manis dari pati",
+                "Gerakan lidah mencampur nasi dengan udara sehingga terjadi reaksi kimia penghasil glukosa"
+            ],
+            answer: 1
+        },
+        {
+            q: "Sinta jarang sekali makan sayur dan buah-buahan. Ia lebih suka makan daging dan makanan cepat saji. Akhir-akhir ini ia kesulitan buang air besar. Analisislah penyebab utama gangguan yang dialami Sinta!",
+            options: [
+                "Lambung tidak bisa mencerna daging sehingga makanan menumpuk",
+                "Kekurangan serat menyebabkan feses menjadi keras dan proses penyerapan air di usus besar terlalu banyak",
+                "Usus halus terlalu cepat menyerap sari makanan cepat saji",
+                "Kerongkongan kekurangan lendir sehingga makanan sulit turun ke lambung"
+            ],
+            answer: 1
+        },
+        {
+            q: "Jika seseorang mengalami kerusakan pada kantung empedunya dan harus diangkat melalui operasi, jenis makanan apa yang proses pencernaannya akan paling terdampak dan mengapa?",
+            options: [
+                "Protein, karena empedu mengandung enzim pepsin",
+                "Karbohidrat, karena empedu berfungsi memecah amilum",
+                "Lemak, karena empedu berfungsi mengemulsikan (memecah) lemak agar mudah dicerna",
+                "Vitamin, karena empedu menyerap vitamin yang larut dalam air"
+            ],
+            answer: 2
+        },
+        {
+            q: "Saat sedang makan sambil berbicara dan tertawa terbahak-bahak, Roni tersedak. Proses apa yang gagal berfungsi dengan baik pada saluran pencernaan dan pernapasan Roni?",
+            options: [
+                "Gerak peristaltik di kerongkongan berjalan terlalu cepat menuju lambung",
+                "Epiglotis terlambat menutup saluran tenggorokan, sehingga makanan masuk ke saluran pernapasan",
+                "Enzim di mulut gagal menghancurkan makanan dengan sempurna",
+                "Tenggorokan mengalami penyempitan akibat getaran pita suara yang terlalu kuat"
+            ],
+            answer: 1
+        },
+        {
+            q: "Pasien diare mengalami buang air besar yang encer dan terus-menerus. Jika dianalisis dari fungsi organ, gangguan ini terjadi karena...",
+            options: [
+                "Usus buntu mengalami peradangan akibat sisa makanan yang menumpuk",
+                "Lambung terlalu banyak mengeluarkan asam lambung",
+                "Dinding usus besar terinfeksi sehingga tidak dapat menyerap kelebihan air dari sisa makanan",
+                "Usus halus gagal menghasilkan enzim amilase, tripsin, dan lipase"
+            ],
+            answer: 2
+        },
+        {
+            q: "Analisislah hubungan antara jonjot-jonjot (vili) pada dinding usus halus dengan proses pencernaan!",
+            options: [
+                "Vili berfungsi menghancurkan makanan yang masih kasar menjadi bubur chyme",
+                "Vili memperluas permukaan usus halus sehingga penyerapan sari-sari makanan menjadi sangat maksimal",
+                "Vili menghasilkan bakteri baik untuk membusukkan sisa-sisa pencernaan",
+                "Vili mendorong makanan menuju usus besar dengan gerak peristaltik"
+            ],
+            answer: 1
+        },
+        {
+            q: "Seorang anak sering mengonsumsi permen namun malas menggosok gigi, hingga giginya berlubang. Bagaimana bakteri di mulut dapat menyebabkan gigi berlubang?",
+            options: [
+                "Bakteri menggigit lapisan email gigi hingga tembus ke saraf",
+                "Bakteri mengubah sisa gula menjadi asam yang perlahan mengikis lapisan email gigi",
+                "Bakteri memakan kalsium dari gigi secara langsung untuk bertahan hidup",
+                "Bakteri menghasilkan racun yang mematikan saraf gigi secara instan"
+            ],
+            answer: 1
+        },
+        {
+            q: "Dalam sebuah eksperimen, daging cincang direndam dalam cairan yang mengandung enzim pepsin dan asam klorida (suasana asam). Apa yang akan terjadi pada daging tersebut dan organ mana yang disimulasikan?",
+            options: [
+                "Daging akan membusuk; menyimulasikan fungsi usus besar",
+                "Daging akan teremulsi menjadi butiran kecil; menyimulasikan fungsi hati",
+                "Protein pada daging akan terurai menjadi pepton; menyimulasikan fungsi lambung",
+                "Karbohidrat daging berubah menjadi gula; menyimulasikan fungsi mulut"
+            ],
+            answer: 2
+        },
+        {
+            q: "Mengapa astronaut di luar angkasa (tanpa gravitasi) tetap dapat menelan makanan dan makanan tersebut tetap bisa sampai ke lambung?",
+            options: [
+                "Karena ada tekanan udara dari paru-paru yang mendorong makanan",
+                "Karena kerongkongan melakukan gerak peristaltik (meremas dan mendorong) makanan ke lambung",
+                "Karena makanan astronaut dibuat dalam bentuk cair agar mudah mengalir",
+                "Karena lambung memiliki daya hisap yang kuat menarik makanan dari mulut"
+            ],
+            answer: 1
+        },
+        {
+            q: "Perhatikan organ pencernaan berikut: (1) Mulut, (2) Kerongkongan, (3) Lambung, (4) Usus Halus, (5) Usus Besar. Di organ manakah pencernaan secara mekanik dan kimiawi terjadi secara bersamaan?",
+            options: [
+                "1 dan 3",
+                "2 dan 4",
+                "3 dan 5",
+                "1 dan 4"
+            ],
+            answer: 0
+        },
+        {
+            q: "Seseorang mengalami sariawan parah dan gusi berdarah. Dokter menyarankan ia banyak makan jeruk dan tomat. Analisislah mengapa anjuran dokter tersebut tepat!",
+            options: [
+                "Jeruk dan tomat mengandung banyak karbohidrat untuk energi penyembuhan",
+                "Vitamin C pada jeruk dan tomat penting untuk menjaga kesehatan jaringan mukosa mulut dan gusi",
+                "Asam pada jeruk membunuh bakteri penyebab sariawan secara langsung",
+                "Kandungan airnya membersihkan sisa makanan di sela-sela gigi"
+            ],
+            answer: 1
+        },
+        {
+            q: "Apa yang akan terjadi pada sistem pencernaan jika bakteri Escherichia coli di usus besar musnah sepenuhnya karena penggunaan antibiotik yang berlebihan?",
+            options: [
+                "Feses akan menjadi sangat keras karena tidak ada penyerapan air",
+                "Pencernaan protein akan berhenti total di lambung",
+                "Sisa makanan sulit membusuk dan tubuh bisa kekurangan vitamin K",
+                "Usus halus tidak bisa lagi menyerap sari-sari makanan"
+            ],
+            answer: 2
+        },
+
+        // SISTEM PERNAPASAN
+        {
+            q: "Seseorang terjebak dalam ruangan penuh asap kebakaran. Ia menjadi lemas dan pingsan. Jika dianalisis secara fisiologis, apa penyebab utamanya?",
+            options: [
+                "Paru-paru mengecil karena panas dari api kebakaran",
+                "Gas karbon monoksida (CO) lebih kuat berikatan dengan hemoglobin dibandingkan oksigen, sehingga sel tubuh kekurangan oksigen",
+                "Asap kebakaran membuat trakea memproduksi lendir berlebih yang menyumbat hidung",
+                "Otot diafragma mengalami kram akibat suhu ruangan yang panas"
+            ],
+            answer: 1
+        },
+        {
+            q: "Pada penderita asma, saluran pernapasan merespons debu atau udara dingin secara berlebihan. Apa yang sebenarnya terjadi pada saluran pernapasannya saat serangan asma?",
+            options: [
+                "Alveolus pecah sehingga oksigen tidak bisa diserap",
+                "Otot pada bronkus dan bronkiolus menyempit serta produksi lendir meningkat, menghalangi jalan udara",
+                "Bakteri menyerang paru-paru dan membuat lubang pada pleura",
+                "Tenggorokan membengkak dan menutupi epiglotis secara permanen"
+            ],
+            answer: 1
+        },
+        {
+            q: "Saat kita berlari kencang, napas kita akan menjadi lebih cepat dan terengah-engah. Analisislah alasan ilmiah dari kondisi tersebut!",
+            options: [
+                "Tubuh membutuhkan oksigen lebih cepat untuk membakar zat makanan menjadi energi ekstra bagi otot",
+                "Paru-paru perlu membuang lebih banyak oksigen yang menumpuk selama berlari",
+                "Otot jantung memaksa paru-paru untuk mengembang lebih besar agar dada tidak sakit",
+                "Udara di luar tubuh lebih dingin sehingga paru-paru harus menghangatinya dengan cepat"
+            ],
+            answer: 0
+        },
+        {
+            q: "Difusi (pertukaran) oksigen dan karbon dioksida terjadi di struktur paru-paru yang bentuknya seperti gelembung-gelembung kecil. Mengapa struktur tersebut (alveolus) jumlahnya sangat banyak dan berdinding tipis?",
+            options: [
+                "Agar paru-paru terlihat besar dan memenuhi rongga dada",
+                "Untuk memperluas area permukaan pertukaran gas dan memudahkan difusi menembus kapiler darah",
+                "Sebagai cadangan udara jika kita menyelam di dalam air",
+                "Untuk menyimpan oksigen cair di dalam paru-paru dalam waktu lama"
+            ],
+            answer: 1
+        },
+        {
+            q: "Apa dampak jangka panjang dari kebiasaan merokok terhadap fungsi alveolus di paru-paru?",
+            options: [
+                "Alveolus akan bertambah banyak sehingga kapasitas napas meningkat",
+                "Alveolus menjadi lebih elastis menahan asap",
+                "Zat tar dan panas merusak dinding alveolus, menyebabkan emfisema (berkurangnya area pertukaran udara)",
+                "Alveolus akan berubah menjadi otot keras untuk menolak asap rokok"
+            ],
+            answer: 2
+        },
+        {
+            q: "Saat kita menarik napas dalam-dalam (inspirasi) menggunakan pernapasan perut, otot diafragma berkontraksi. Apa yang terjadi selanjutnya pada rongga dada dan paru-paru?",
+            options: [
+                "Diafragma melengkung ke atas, rongga dada mengecil, paru-paru mengempis",
+                "Diafragma mendatar, rongga dada membesar, tekanan udara turun, udara masuk ke paru-paru",
+                "Diafragma mendatar, tulang rusuk turun, paru-paru terjepit",
+                "Diafragma melengkung, tulang rusuk naik, tekanan udara di paru-paru meningkat pesat"
+            ],
+            answer: 1
+        },
+        {
+            q: "Mengapa bernapas melalui hidung jauh lebih sehat dan dianjurkan daripada bernapas melalui mulut?",
+            options: [
+                "Udara melalui mulut jalurnya lebih panjang sehingga lambat sampai paru-paru",
+                "Di hidung udara disaring oleh bulu hidung, disesuaikan suhunya, dan dilembapkan oleh selaput lendir",
+                "Mulut hanya dirancang untuk mengeluarkan karbon dioksida, bukan menghirup oksigen",
+                "Hidung memiliki otot untuk memompa udara lebih kuat dibanding mulut"
+            ],
+            answer: 1
+        },
+        {
+            q: "Seorang pasien didiagnosis menderita Tuberkulosis (TBC). Dokter menyarankan pasien memakai masker dan dipisahkan alat makannya. Mengapa penyakit ini sangat diwaspadai?",
+            options: [
+                "TBC disebabkan oleh virus yang menyerang lambung dan menular lewat keringat",
+                "TBC disebabkan bakteri Mycobacterium tuberculosis yang merusak jaringan paru-paru dan mudah menular lewat udara (droplet)",
+                "Penyakit ini membuat darah berhenti mengalir ke paru-paru",
+                "Bakteri TBC bisa mengubah karbon dioksida menjadi racun mematikan dalam seketika"
+            ],
+            answer: 1
+        },
+        {
+            q: "Jika selaput pembungkus paru-paru (pleura) mengalami peradangan akibat infeksi, apa kesulitan utama yang akan dirasakan pasien?",
+            options: [
+                "Rasa sakit yang sangat tajam di dada setiap kali menarik napas atau batuk akibat gesekan",
+                "Hidung akan terus mengeluarkan lendir berwarna hijau",
+                "Otot leher akan menjadi kaku dan sulit digerakkan",
+                "Pita suara akan rusak sehingga pasien tidak bisa berbicara"
+            ],
+            answer: 0
+        },
+        {
+            q: "Budi berenang dan mencoba menahan napas di dalam air selama mungkin. Tiba-tiba ia merasa dorongan kuat yang tidak tertahankan untuk segera muncul ke permukaan dan bernapas. Sensor di otaknya sebenarnya mendeteksi apa?",
+            options: [
+                "Kekurangan oksigen yang ekstrem di paru-paru",
+                "Meningkatnya kadar karbon dioksida (CO2) dalam darah yang membuat darah menjadi asam",
+                "Paru-paru yang mulai kemasukan air lewat hidung",
+                "Jantung yang berhenti berdetak sesaat"
+            ],
+            answer: 1
+        },
+        {
+            q: "Di dinding tenggorokan (trakea) terdapat silia (rambut getar) dan sel penghasil lendir. Jika seseorang sering terpapar polusi udara tinggi, apa analisis fungsi dari struktur tersebut?",
+            options: [
+                "Silia akan rontok untuk memberi jalan pada debu agar cepat masuk",
+                "Silia dan lendir bekerja keras menangkap kotoran lalu mendorongnya ke atas untuk dikeluarkan lewat batuk",
+                "Lendir akan mengeras menjadi batu untuk memblokir debu secara permanen",
+                "Silia memproduksi oksigen cadangan saat udara kotor masuk"
+            ],
+            answer: 1
+        },
+        {
+            q: "Penyakit pneumonia atau paru-paru basah sangat berbahaya, terutama bagi anak-anak. Analisislah mengapa penyakit ini bisa mengancam nyawa!",
+            options: [
+                "Alveolus terisi oleh cairan atau nanah akibat infeksi, sehingga pertukaran O2 dan CO2 terhambat parah",
+                "Paru-paru menyusut menjadi seukuran bola tenis karena kekurangan darah",
+                "Bronkus terlipat sehingga udara sama sekali tidak bisa masuk ke paru-paru",
+                "Tulang rusuk menekan paru-paru hingga pecah akibat batuk yang terus-menerus"
+            ],
+            answer: 0
+        },
+
+        // SISTEM PEREDARAN DARAH
+        {
+            q: "Luka Ani tidak kunjung berhenti berdarah setelah terjatuh dari sepeda. Dokter mengatakan Ani mengalami kelainan genetik pada darahnya. Analisislah kondisi yang dialami Ani!",
+            options: [
+                "Ani menderita anemia, sel darah merahnya terlalu sedikit",
+                "Ani menderita leukimia, sel darah putihnya memakan sel darah merah",
+                "Ani menderita hemofilia, darahnya kekurangan protein pembeku darah (trombosit/faktor koagulasi)",
+                "Ani menderita hipertensi, tekanan darahnya terlalu tinggi saat jatuh"
+            ],
+            answer: 2
+        },
+        {
+            q: "Otot bilik kiri (ventrikel kiri) jantung manusia lebih tebal dibandingkan bilik kanan. Analisislah alasan anatomi yang tepat dari fakta tersebut!",
+            options: [
+                "Bilik kiri harus memompa darah ke seluruh tubuh yang jaraknya jauh dan tekanannya tinggi",
+                "Bilik kiri hanya memompa darah ke paru-paru yang jaraknya dekat",
+                "Bilik kiri bertugas menerima darah kotor dari seluruh tubuh",
+                "Bilik kiri menghasilkan sel darah merah yang membutuhkan tempat lebih luas"
+            ],
+            answer: 0
+        },
+        {
+            q: "Kakek sering mengeluh pusing, tengkuk terasa berat, dan tekanan darahnya di atas 140/90 mmHg. Dokter menyarankan Kakek mengurangi konsumsi garam. Mengapa garam berbahaya bagi kondisi kakek?",
+            options: [
+                "Garam membuat darah menjadi manis sehingga memicu diabetes",
+                "Garam mengikat banyak air dalam darah, sehingga volume darah meningkat dan memicu hipertensi (tekanan darah tinggi)",
+                "Garam dapat melubangi dinding pembuluh darah secara langsung",
+                "Garam membuat jantung berdetak lebih lambat dari biasanya"
+            ],
+            answer: 1
+        },
+        {
+            q: "Jika hasil tes darah menunjukkan jumlah leukosit (sel darah putih) seseorang melonjak sangat tinggi di atas normal, analisis medis apa yang paling mungkin disimpulkan oleh dokter?",
+            options: [
+                "Tubuh orang tersebut sangat sehat dan bugar",
+                "Orang tersebut kekurangan zat besi dalam makanannya",
+                "Sedang terjadi infeksi bakteri atau virus di dalam tubuh, sehingga leukosit diperbanyak untuk melawan patogen",
+                "Darah orang tersebut kehilangan kemampuan untuk membeku"
+            ],
+            answer: 2
+        },
+        {
+            q: "Darah dari jantung yang menuju ke paru-paru dibawa oleh arteri pulmonalis. Analisislah karakteristik darah yang mengalir di pembuluh ini dibandingkan arteri lainnya!",
+            options: [
+                "Kaya akan oksigen dan warnanya merah cerah",
+                "Mengandung banyak sari-sari makanan untuk paru-paru",
+                "Banyak mengandung karbon dioksida (darah kotor) untuk dibersihkan di paru-paru",
+                "Tidak memiliki sel darah merah, hanya plasma darah saja"
+            ],
+            answer: 2
+        },
+        {
+            q: "Orang bergolongan darah O sering disebut donor universal. Namun, dalam praktik medis modern, transfusi tetap diutamakan yang bergolongan darah sama. Mengapa golongan O secara teori bisa diberikan ke siapa saja?",
+            options: [
+                "Karena darah O memiliki sel darah merah yang ukurannya sangat kecil",
+                "Karena sel darah merah golongan O tidak memiliki antigen A dan antigen B, sehingga tidak akan digumpalkan oleh antibodi penerima",
+                "Karena darah O memiliki semua jenis antibodi sehingga sangat kuat melawan penyakit",
+                "Karena darah O bisa berubah warna menyesuaikan golongan darah penerimanya"
+            ],
+            answer: 1
+        },
+        {
+            q: "Penyakit jantung koroner terjadi ketika pembuluh darah koroner yang menyuplai jantung mengalami penyumbatan. Analisislah penyebab utama dan akibat fatal dari kondisi ini!",
+            options: [
+                "Penyumbatan oleh plak kolesterol/lemak; akibatnya otot jantung mati karena tidak mendapat oksigen dan nutrisi",
+                "Penyumbatan oleh sel darah putih; akibatnya jantung kelebihan oksigen",
+                "Penyumbatan oleh zat kapur tulang; akibatnya jantung membesar",
+                "Penyumbatan oleh udara; akibatnya detak jantung menjadi lambat"
+            ],
+            answer: 0
+        },
+        {
+            q: "Seseorang mengalami kecelakaan dan salah satu pembuluh darahnya terpotong. Darah yang keluar tampak memancar kuat mengikuti detak jantung dan berwarna merah terang. Pembuluh darah apakah yang terpotong?",
+            options: [
+                "Pembuluh Vena (Balik)",
+                "Pembuluh Kapiler",
+                "Pembuluh Arteri (Nadi)",
+                "Pembuluh Limfa"
+            ],
+            answer: 2
+        },
+        {
+            q: "Ibu hamil sering mengalami varises (pelebaran pembuluh darah) di bagian betis kakinya. Analisislah mengapa varises sering terjadi pada pembuluh vena (balik) kaki bagian bawah!",
+            options: [
+                "Karena pembuluh vena di kaki bertugas memompa darah langsung ke jantung",
+                "Vena harus melawan gaya gravitasi untuk membawa darah naik ke jantung, jika katup vena lemah darah akan menumpuk dan melebar",
+                "Karena tulang kaki menekan arteri terlalu kuat",
+                "Karena vena menyerap racun dari tanah saat ibu hamil berjalan tanpa alas kaki"
+            ],
+            answer: 1
+        },
+        {
+            q: "Plasma darah menyusun sekitar 55% dari darah kita dan sebagian besar terdiri dari air. Selain sel darah, analisislah peran vital plasma darah dalam sistem peredaran tubuh!",
+            options: [
+                "Menjadi tempat pertukaran oksigen langsung di seluruh tubuh",
+                "Mengangkut sari-sari makanan, hormon, dan sisa metabolisme (seperti urea) ke organ yang dituju",
+                "Memproduksi sel darah merah merah yang baru",
+                "Menjaga tulang agar tetap keras dan padat"
+            ],
+            answer: 1
+        },
+        {
+            q: "Pada peredaran darah kecil, urutan perjalanan darah yang benar setelah dipompa dari bilik kanan jantung adalah...",
+            options: [
+                "Bilik kanan -> Arteri pulmonalis -> Paru-paru -> Vena pulmonalis -> Serambi kiri",
+                "Bilik kanan -> Aorta -> Seluruh tubuh -> Vena Cava -> Serambi kanan",
+                "Bilik kanan -> Paru-paru -> Seluruh tubuh -> Jantung",
+                "Bilik kanan -> Vena pulmonalis -> Paru-paru -> Arteri pulmonalis -> Serambi kiri"
+            ],
+            answer: 0
+        },
+        {
+            q: "Orang yang tinggal di dataran tinggi pegunungan secara alami memiliki jumlah sel darah merah yang lebih banyak dibandingkan orang di dataran rendah. Analisislah adaptasi fisiologis ini!",
+            options: [
+                "Suhu yang dingin membekukan sebagian darah, sehingga tubuh memproduksi lebih banyak",
+                "Kadar oksigen di dataran tinggi lebih tipis, sehingga tubuh memproduksi banyak eritrosit agar pengikatan oksigen tetap maksimal",
+                "Orang pegunungan makan lebih banyak zat besi dari hasil pertanian",
+                "Gravitasi pegunungan menarik oksigen lebih kuat ke dalam paru-paru"
+            ],
+            answer: 1
+        },
+        {
+            q: "Anemia sering kali disalahartikan sebagai tekanan darah rendah (hipotensi). Padahal anemia adalah... Analisislah perbedaannya!",
+            options: [
+                "Hipotensi adalah kurang darah, anemia adalah jantung berdetak lambat",
+                "Anemia berkaitan dengan kurangnya kadar hemoglobin/sel darah merah, sedangkan hipotensi berkaitan dengan kekuatan pompa darah yang lemah pada pembuluh",
+                "Keduanya sama saja, hanya beda istilah medis",
+                "Anemia adalah darah sulit membeku, hipotensi adalah darah mengalir terlalu cepat"
+            ],
+            answer: 1
+        },
+
+        // SISTEM GERAK
+        {
+            q: "Pak Joko (60 tahun) terjatuh pelan namun tulangnya patah. Setelah diperiksa, tulang Pak Joko berongga, keropos, dan massa tulangnya menurun drastis. Analisislah penyakit yang dialami Pak Joko dan penyebabnya!",
+            options: [
+                "Polio, disebabkan oleh infeksi virus yang merusak saraf tulang",
+                "Kifosis, disebabkan oleh kebiasaan duduk membungkuk semasa muda",
+                "Osteoporosis, disebabkan oleh kekurangan kalsium dan vitamin D dalam jangka waktu lama",
+                "Rakitis, disebabkan oleh kekurangan sinar matahari pagi"
+            ],
+            answer: 2
+        },
+        {
+            q: "Saat Dodi mengangkat barbel dengan tangannya, otot bisep (lengan depan) akan membesar dan mengeras, sedangkan otot trisep (lengan belakang) meregang. Analisislah cara kerja kedua otot ini!",
+            options: [
+                "Bekerja secara sinergis (bersamaan saling menguatkan)",
+                "Bekerja secara antagonis (berlawanan), bisep berkontraksi dan trisep relaksasi",
+                "Keduanya tidak berhubungan, trisep hanya bekerja saat tidur",
+                "Bekerja secara bergantian memompa darah ke telapak tangan"
+            ],
+            answer: 1
+        },
+        {
+            q: "Siswa sering membawa tas ransel yang sangat berat pada satu sisi bahu saja selama bertahun-tahun. Jika dianalisis, kelainan tulang belakang apa yang kemungkinan besar akan dialami siswa tersebut?",
+            options: [
+                "Kifosis (tulang belakang melengkung ke belakang/bungkuk)",
+                "Lordosis (tulang belakang melengkung ke depan di bagian pinggang)",
+                "Skoliosis (tulang belakang melengkung ke samping membentuk huruf S atau C)",
+                "Fraktura (patah tulang belakang secara tiba-tiba)"
+            ],
+            answer: 2
+        },
+        {
+            q: "Tulang tengkorak manusia tersusun dari banyak tulang pipih. Saat bayi, tulang-tulang ini belum menyatu sempurna dan disebut ubun-ubun. Analisislah fungsi anatomi belum menyatunya tulang tengkorak pada bayi!",
+            options: [
+                "Agar bayi bisa bernapas melalui kepalanya",
+                "Untuk memudahkan proses persalinan saat melewati jalan lahir dan memberi ruang otak untuk berkembang",
+                "Agar rambut bayi mudah tumbuh subur",
+                "Sebagai cadangan tulang jika bayi kekurangan kalsium"
+            ],
+            answer: 1
+        },
+        {
+            q: "Sendi peluru memungkinkan gerakan ke segala arah, contohnya pada pangkal lengan (bahu). Analisislah bentuk bonggol tulang yang membentuk sendi peluru ini!",
+            options: [
+                "Kedua tulang berbentuk datar dan saling bergeser",
+                "Satu tulang berbentuk bonggol bulat (seperti bola) dan tulang lainnya berbentuk seperti mangkuk yang pas",
+                "Berbentuk seperti engsel pintu yang hanya bergerak satu arah",
+                "Tulang satu memutari tulang lain yang bertindak sebagai poros"
+            ],
+            answer: 1
+        },
+        {
+            q: "Setelah berolahraga sangat keras tanpa pemanasan, otot kaki Budi terasa sangat kaku, nyeri, dan tidak bisa digerakkan sementara (kram). Apa proses biokimia yang memicu hal ini?",
+            options: [
+                "Tulang betis memanjang dan menekan otot",
+                "Otot kehabisan darah secara total dan mati lemas",
+                "Pembakaran energi di otot kekurangan oksigen, sehingga menghasilkan tumpukan asam laktat yang membuat kram",
+                "Sendi lutut bergeser dari posisinya dan menjepit saraf"
+            ],
+            answer: 2
+        },
+        {
+            q: "Daun telinga dan ujung hidung kita terasa lentur dan bisa dilipat tanpa patah. Hal ini dikarenakan bagian tersebut disusun oleh...",
+            options: [
+                "Tulang keras yang dilapisi banyak lemak tebal",
+                "Tulang rawan (kartilago) yang tidak memiliki zat kapur sebanyak tulang keras",
+                "Otot lurik yang tidak menempel pada rangka manapun",
+                "Kumpulan pembuluh darah yang memadat"
+            ],
+            answer: 1
+        },
+        {
+            q: "Jantung dan paru-paru adalah organ vital yang sangat lunak. Analisislah bagian rangka tubuh mana yang secara spesifik dirancang untuk melindungi kedua organ tersebut!",
+            options: [
+                "Rangka anggota gerak (tangan dan kaki)",
+                "Tulang tengkorak dan tulang leher",
+                "Tulang rusuk (iga) dan tulang dada",
+                "Tulang panggul dan tulang ekor"
+            ],
+            answer: 2
+        },
+        {
+            q: "Otot polos terdapat pada dinding organ dalam seperti lambung dan usus. Analisislah perbedaan kerja otot polos dengan otot lurik (otot rangka)!",
+            options: [
+                "Otot polos bekerja secara sadar (menurut kehendak kita), otot lurik bekerja tidak sadar",
+                "Otot polos mudah lelah, otot lurik tidak pernah lelah",
+                "Otot polos bekerja lambat, teratur, dan di luar kesadaran otak (tak sadar), sedangkan otot lurik bekerja sesuai perintah otak (sadar)",
+                "Otot polos berwarna merah terang, otot lurik berwarna putih pucat"
+            ],
+            answer: 2
+        },
+        {
+            q: "Anak-anak yang kekurangan vitamin D bisa mengalami kaki berbentuk X atau O (Rakitis). Mengapa vitamin D sangat krusial bagi perkembangan tulang anak?",
+            options: [
+                "Vitamin D adalah bahan pembuat kolagen yang melenturkan tulang",
+                "Vitamin D diperlukan untuk membantu tubuh menyerap kalsium dan fosfor dari makanan ke dalam tulang",
+                "Vitamin D langsung berubah menjadi tulang keras di dalam tubuh",
+                "Vitamin D berfungsi membunuh bakteri perusak tulang"
+            ],
+            answer: 1
+        },
+        {
+            q: "Sebuah kecelakaan menyebabkan tulang paha seseorang patah tetapi ujung tulang tidak merobek kulit dan otot. Analisislah jenis patah tulang (fraktura) ini!",
+            options: [
+                "Fraktura terbuka, karena terjadi di luar ruangan",
+                "Fraktura tertutup, karena ujung tulang yang patah tidak menembus kulit (tetap di dalam)",
+                "Keseleo (sprain), karena hanya ligamennya yang sobek",
+                "Fisura (retak tulang), karena tulangnya terbelah dua"
+            ],
+            answer: 1
+        },
+        {
+            q: "Perhatikan aktivitas berikut: (1) Menulis, (2) Berdetaknya jantung, (3) Meremas makanan di lambung, (4) Berlari. Manakah aktivitas yang dikendalikan oleh otot sadar (otot lurik)?",
+            options: [
+                "1 dan 4",
+                "2 dan 3",
+                "1 dan 3",
+                "2 dan 4"
+            ],
+            answer: 0
+        }
+    ];
+
+    // --- GAME LOGIC ---
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let playerName = "";
+    let correctAnswersCount = 0;
+    let hasAnswered = false;
+
+    // Elements
+    const startScreen = document.getElementById("start-screen");
+    const quizScreen = document.getElementById("quiz-screen");
+    const resultScreen = document.getElementById("result-screen");
+    const questionText = document.getElementById("question-text");
+    const optionsContainer = document.getElementById("options-container");
+    const nextBtn = document.getElementById("next-btn");
+    const questionTracker = document.getElementById("question-tracker");
+    const playerDisplay = document.getElementById("player-display");
+    const nameInput = document.getElementById("player-name");
+
+    function startGame() {
+        const name = nameInput.value.trim();
+        if(name === "") {
+            alert("Harap masukkan nama kamu terlebih dahulu!");
+            return;
+        }
+        playerName = name;
+        playerDisplay.textContent = "Pemain: " + playerName;
+        
+        startScreen.classList.remove("active");
+        quizScreen.classList.add("active");
+        
+        // Shuffle questions optional, but we keep sequential for structure
+        showQuestion();
+    }
+
+    function showQuestion() {
+        hasAnswered = false;
+        nextBtn.style.display = "none";
+        optionsContainer.innerHTML = "";
+        
+        const qData = questions[currentQuestionIndex];
+        questionTracker.textContent = `Soal ${currentQuestionIndex + 1} dari ${questions.length}`;
+        questionText.textContent = qData.q;
+
+        qData.options.forEach((opt, index) => {
+            const btn = document.createElement("div");
+            btn.classList.add("option");
+            btn.textContent = String.fromCharCode(65 + index) + ". " + opt;
+            btn.onclick = () => selectAnswer(index, btn);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    function selectAnswer(selectedIndex, btnElement) {
+        if(hasAnswered) return; // Prevent multiple clicks
+        hasAnswered = true;
+
+        const qData = questions[currentQuestionIndex];
+        const allOptions = optionsContainer.querySelectorAll(".option");
+
+        // Reveal styling
+        if(selectedIndex === qData.answer) {
+            btnElement.classList.add("correct-reveal");
+            correctAnswersCount++;
+        } else {
+            btnElement.classList.add("wrong-reveal");
+            // Also show correct answer
+            allOptions[qData.answer].classList.add("correct-reveal");
+        }
+
+        // Disable all options
+        allOptions.forEach(opt => opt.style.cursor = "default");
+
+        // Show Next button
+        nextBtn.style.display = "block";
+        if(currentQuestionIndex === questions.length - 1) {
+            nextBtn.textContent = "Selesai & Lihat Hasil";
+        }
+    }
+
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if(currentQuestionIndex < questions.length) {
+            showQuestion();
+        } else {
+            endGame();
+        }
+    }
+
+    function endGame() {
+        quizScreen.classList.remove("active");
+        resultScreen.classList.add("active");
+
+        // Calculate score (out of 100)
+        score = Math.round((correctAnswersCount / questions.length) * 100);
+
+        document.getElementById("final-name").textContent = playerName;
+        document.getElementById("final-score").textContent = score;
+    }
+
+    function downloadCertificate() {
+        const canvas = document.getElementById("cert-canvas");
+        const ctx = canvas.getContext("2d");
+
+        // Draw Background
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw Border
+        ctx.lineWidth = 15;
+        ctx.strokeStyle = "#9FACE6";
+        ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "#74EBD5";
+        ctx.strokeRect(35, 35, canvas.width - 70, canvas.height - 70);
+
+        // Text Styles
+        ctx.textAlign = "center";
+        
+        ctx.font = "bold 40px Arial";
+        ctx.fillStyle = "#2c3e50";
+        ctx.fillText("SERTIFIKAT PENGHARGAAN", canvas.width / 2, 150);
+
+        ctx.font = "20px Arial";
+        ctx.fillStyle = "#555";
+        ctx.fillText("Diberikan dengan bangga kepada:", canvas.width / 2, 220);
+
+        // Player Name
+        ctx.font = "bold 45px Arial";
+        ctx.fillStyle = "#3b82f6";
+        ctx.fillText(playerName, canvas.width / 2, 280);
+        
+        // Underline name
+        const textWidth = ctx.measureText(playerName).width;
+        ctx.beginPath();
+        ctx.moveTo((canvas.width / 2) - (textWidth / 2) - 20, 290);
+        ctx.lineTo((canvas.width / 2) + (textWidth / 2) + 20, 290);
+        ctx.strokeStyle = "#3b82f6";
+        ctx.stroke();
+
+        ctx.font = "20px Arial";
+        ctx.fillStyle = "#555";
+        ctx.fillText("Atas keberhasilannya menyelesaikan Gim Edukasi", canvas.width / 2, 350);
+        ctx.fillText("Mata Pelajaran IPAS Kelas 5: Anatomi Tubuh Manusia", canvas.width / 2, 385);
+
+        ctx.font = "bold 30px Arial";
+        ctx.fillStyle = "#e67e22";
+        ctx.fillText("Nilai Akhir: " + score + " / 100", canvas.width / 2, 460);
+
+        ctx.font = "italic 16px Arial";
+        ctx.fillStyle = "#999";
+        const date = new Date().toLocaleDateString("id-ID", { year: 'numeric', month: 'long', day: 'numeric' });
+        ctx.fillText("Diterbitkan pada: " + date, canvas.width / 2, 530);
+
+        // Trigger Download
+        const link = document.createElement("a");
+        link.download = `Sertifikat_IPAS_${playerName.replace(/\s+/g, '_')}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    }
+
+    // Allow Enter key to start game
+    nameInput.addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            startGame();
+        }
+    });
+</script>
+</body>
+</html>
